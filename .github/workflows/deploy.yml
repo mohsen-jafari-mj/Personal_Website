@@ -3,7 +3,7 @@ name: Build and Deploy Vite React App
 on:
   push:
     branches:
-      - main
+      - main  # Change if your default branch is different
 
 permissions:
   contents: write
@@ -13,20 +13,36 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      # 1. Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm install
 
+      # 4. Build project and capture logs
       - name: Build
-        run: npm run build
+        run: |
+          npm run build 2>&1 | tee build.log
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+      # 5. Upload build logs (always runs)
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          publish_dir: ./dist  # Vite outputs here
+          name: build-log
+          path: build.log
+
+      # 6. Deploy to GitHub Pages (only if build succeeds)
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: actions/deploy-pages@v4
