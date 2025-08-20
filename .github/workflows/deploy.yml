@@ -1,9 +1,9 @@
-name: Build and Deploy React App to GitHub Pages
+name: Deploy Website
 
 on:
   push:
     branches:
-      - main  # Change if your default branch is different
+      - main  # Change to 'master' if that's your branch name
 
 permissions:
   contents: write
@@ -11,48 +11,37 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
-      - name: Ensure homepage in package.json
-        run: |
-          URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-          echo "Setting homepage=$URL"
-          jq ".homepage = \"$URL\"" package.json > package.tmp.json && mv package.tmp.json package.json
-
-      - name: Ensure react-scripts dependency
-        run: |
-          if ! npm list react-scripts >/dev/null 2>&1; then
-            echo "react-scripts missing, installing..."
-            npm install react-scripts --save
-          fi
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Build React app
-        run: |
-          npm run build --if-present --verbose 2>&1 | tee build.log
+      - name: Build Project
+        run: npm run build
 
-      - name: Upload build logs
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Upload Build Artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          name: build-logs
-          path: build.log
+          path: ./build  # or ./dist if that's your build folder
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
-        if: success()
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+        uses: actions/deploy-pages@v4
+
+      - name: Verify Deployment
+        run: |
+          echo "Checking if deployment is live..."
+          sleep 20  # wait for GitHub Pages to refresh
+          curl -I https://<USERNAME>.github.io/<REPO> | grep "200 OK"
