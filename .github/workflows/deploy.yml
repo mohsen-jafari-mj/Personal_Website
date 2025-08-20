@@ -1,9 +1,9 @@
-name: Build and Deploy React App to GitHub Pages
+name: Build and Deploy Vite React App
 
 on:
   push:
     branches:
-      - main  # Change if your default branch is different
+      - main
 
 permissions:
   contents: write
@@ -11,58 +11,22 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 2. Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 4. Build project
-      - name: Build project
+      - name: Build
         run: npm run build
 
-      # 5. Upload build artifact (v4)
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-files
-          path: ./dist  # Vite outputs to 'dist'. If CRA, use './build'
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      # 1. Download build artifact
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-files
-          path: ./dist
-
-      # 2. Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
-
-      # 3. Verify Deployment
-      - name: Verify Deployment
-        run: |
-          URL="https://<USERNAME>.github.io/<REPO>/"
-          echo "Checking $URL..."
-          sleep 20
-          if curl -s -o /dev/null -w "%{http_code}" $URL | grep -q "200"; then
-            echo "Deployment successful!"
-          else
-            echo "Deployment failed!"
-            exit 1
-          fi
+        with:
+          publish_dir: ./dist  # Vite outputs here
