@@ -1,9 +1,9 @@
-name: Deploy Website
+name: Build and Deploy React App to GitHub Pages
 
 on:
   push:
     branches:
-      - main  # Change to 'master' if that's your branch name
+      - main  # Change if your default branch is different
 
 permissions:
   contents: write
@@ -14,34 +14,55 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      # 1. Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      # 2. Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install Dependencies
+      # 3. Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: Build Project
+      # 4. Build project
+      - name: Build project
         run: npm run build
 
-      - name: Upload Build Artifact
-        uses: actions/upload-pages-artifact@v2
+      # 5. Upload build artifact (v4)
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: ./build  # or ./dist if that's your build folder
+          name: build-files
+          path: ./dist  # Vite outputs to 'dist'. If CRA, use './build'
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # 1. Download build artifact
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: ./dist
+
+      # 2. Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
 
+      # 3. Verify Deployment
       - name: Verify Deployment
         run: |
-          echo "Checking if deployment is live..."
-          sleep 20  # wait for GitHub Pages to refresh
-          curl -I https://<USERNAME>.github.io/<REPO> | grep "200 OK"
+          URL="https://<USERNAME>.github.io/<REPO>/"
+          echo "Checking $URL..."
+          sleep 20
+          if curl -s -o /dev/null -w "%{http_code}" $URL | grep -q "200"; then
+            echo "Deployment successful!"
+          else
+            echo "Deployment failed!"
+            exit 1
+          fi
