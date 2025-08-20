@@ -23,9 +23,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build project and save log
-        run: |
-          npm run build 2>&1 | tee build.log
+      - name: Build project
+        run: npm run build 2>&1 | tee build.log
 
       - name: Upload build log
         if: always()
