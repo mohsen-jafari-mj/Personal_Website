@@ -30,7 +30,7 @@ jobs:
         run: |
           npm run build 2>&1 | tee build.log
 
-      # 5. Upload build log (always runs)
+      # 5. Upload build log (always runs) using v4
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
